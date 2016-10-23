@@ -2,6 +2,7 @@
 
 #output files
 *.tga
+*.exe
 
 # IntelliJ project files
 .idea
