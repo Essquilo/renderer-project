@@ -8,16 +8,18 @@
 #include "geometry.h"
 
 void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage&image, TGAColor color);
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color);
+void triangle(Vec3i t0, Vec3i t1, Vec3i t2, TGAImage &image, TGAColor color, int *zbuffer, int width);
 template<typename T>
-void swap_by_cond(T& a, T& b)
+bool swap_by_cond(T& a, T& b)
 {
     if (a > b)
     {
         T tmp(a);
         a = b;
         b = tmp;
+        return true;
     }
+    return false;
 }
 
 
