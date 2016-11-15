@@ -21,7 +21,8 @@ int main(int argc, char** argv) {
     if (2==argc) {
         model = new Model(argv[1]);
     } else {
-        model = new Model("../models/upside_down_triangle.obj");
+        //model = new Model("../models/african_head.obj");
+        model = new Model("../models/african_head.obj");
     }
 
     zbuffer = new int[width*height];
