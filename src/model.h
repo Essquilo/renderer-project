@@ -5,7 +5,6 @@
 #ifndef RENDERER_PROJECT_MODEL_H
 #define RENDERER_PROJECT_MODEL_H
 
-
 #include <vector>
 #include "geometry.h"
 
