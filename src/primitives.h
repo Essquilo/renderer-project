@@ -12,11 +12,8 @@ void triangle(Vec3i t0, Vec3i t1, Vec3i t2, TGAImage &image, TGAColor color, int
 template<typename T>
 bool swap_by_cond(T& a, T& b)
 {
-    if (a > b)
-    {
-        T tmp(a);
-        a = b;
-        b = tmp;
+    if (a > b){
+        std::swap(a, b);
         return true;
     }
     return false;

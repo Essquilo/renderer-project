@@ -3,6 +3,7 @@
 #output files
 *.tga
 *.exe
+cmake-build-debug
 
 # IntelliJ project files
 .idea
