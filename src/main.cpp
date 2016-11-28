@@ -13,10 +13,14 @@ int *zbuffer = NULL;
 Vec3f light_dir(0, 0, -1);
 
 int main(int argc, char **argv) {
+    TGAImage texture;
     if (2 == argc) {
         model = new Model(argv[1]);
     } else {
         model = new Model("models/african_head.obj");
+        texture = TGAImage();
+        texture.read_tga_file("models/african_head_diffuse.tga");
+        texture.flip_vertically();
     }
 
     zbuffer = new int[width * height];
@@ -27,20 +31,24 @@ int main(int argc, char **argv) {
     { // draw the model
         TGAImage image(width, height, TGAImage::RGB);
         for (int i = 0; i < model->nfaces(); i++) {
-            std::vector<int> face = model->face(i);
+            std::vector<Vec3i> face = model->face(i);
             Vec3i screen_coords[3];
             Vec3f world_coords[3];
+            Vec3i texture_coords[3];
             for (int j = 0; j < 3; j++) {
-                Vec3f v = model->vert(face[j]);
+                Vec3f v = model->v(face[j].ivert);
                 screen_coords[j] = Vec3i((v.x + 1.) * width / 2., (v.y + 1.) * height / 2., (v.z + 1.) * depth / 2.);
                 world_coords[j] = v;
+                Vec3f vt = model->vt(face[j].iuv);
+                texture_coords[j] = Vec3i(vt.x*texture.get_width(), vt.y*texture.get_height(), 0);
             }
             Vec3f n = (world_coords[2] - world_coords[0]) ^(world_coords[1] - world_coords[0]);
             n.normalize();
             float intensity = n * light_dir;
             if (intensity > 0) {
-                triangle(screen_coords[0], screen_coords[1], screen_coords[2], image,
-                         TGAColor(intensity * 255, intensity * 255, intensity * 255, 255), zbuffer, width);
+
+                triangle(screen_coords[0], screen_coords[1], screen_coords[2], texture_coords[0], texture_coords[1],
+                         texture_coords[2], image, intensity,texture, zbuffer, width);
             }
         }
 
