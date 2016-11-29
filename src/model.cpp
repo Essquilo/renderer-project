@@ -16,12 +16,12 @@ Model::Model(const char *filename) : vertices_(), texture_vertices_(), faces_() 
         if (!line.compare(0, 2, "v ")) {
             iss >> trash;
             Vec3f v;
-            for (int i=0;i<3;i++) iss >> v.raw[i];
+            for (int i=0;i<3;i++) iss >> v[i];
             vertices_.push_back(v);
         } else if (!line.compare(0, 3, "vt ")) {
             iss >> trash >>trash;
             Vec3f vt;
-            for (int i=0;i<3;i++) iss >> vt.raw[i];
+            for (int i=0;i<3;i++) iss >> vt[i];
             texture_vertices_.push_back(vt);
         } else if (!line.compare(0, 2, "f ")) {
             std::vector<Vec3i> f;

@@ -4,6 +4,7 @@
 
 #include "primitives.h"
 #include <algorithm>
+#include <iostream>
 
 void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
     int dx = x1 - x0;
@@ -36,125 +37,65 @@ void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor c
     }
 }
 
-void triangle(Vec3i v0, Vec3i v1, Vec3i v2, Vec3i vt0, Vec3i vt1, Vec3i vt2, TGAImage &image, float intensity, TGAImage &texture, int *zbuffer, int width) {
-    TGAColor color(0, 255, 0, 255);
+void triangle(Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage &image, float intensity,
+              TGAImage &texture, int *zbuffer, int width) {
+    if (v0.y==v1.y && v0.y==v2.y) return; // i dont care about degenerate triangles
+    if (v0.y>v1.y) { std::swap(v0, v1); std::swap(uv0, uv1); }
+    if (v0.y>v2.y) { std::swap(v0, v2); std::swap(uv0, uv2); }
+    if (v1.y>v2.y) { std::swap(v1, v2); std::swap(uv1, uv2); }
 
-    //sorting vertices so v0.y is lowest
-    if (swap_by_cond(v0, v1)) {
-        std::swap(vt0, vt1);
-    }
-    if (swap_by_cond(v0, v2)) {
-        std::swap(vt0, vt2);
-    }
-    if (swap_by_cond(v1, v2)) {
-        std::swap(vt1, vt2);
-    }
+    int total_height = v2.y-v0.y;
+    int segment1_height = v1.y-v0.y;
+    int segment2_height = v2.y-v1.y;
 
-    if (v1.x < v2.x && v1.y == v2.y) {
-        std::swap(v1, v2);
-        std::swap(vt1, vt2);
-    }
-    if (v0.x > v1.x && v0.y == v1.y) {
-        std::swap(v0, v1);
-        std::swap(vt0, vt1);
-    }
-    //brezenchem_line(v0.x, v0.y, v1.x, v1.y, image, color);
-    //brezenchem_line(v1.x, v1.y, v2.x, v2.y, image, color);
-    //brezenchem_line(v2.x, v2.y, v0.x, v0.y, image, color);
+    int uv_total_height = v2.y-v0.y;
+    int uv_segment1_height = v1.y-v0.y;
+    int uv_segment2_height = v2.y-v1.y;
 
-    double dx20 = (v2.y == v0.y) ? 0 : (double) (v2.x - v0.x) / (double) (v2.y - v0.y);
-    double dx10 = (v1.y == v0.y) ? 0 : (double) (v1.x - v0.x) / (double) (v1.y - v0.y);
-    double dx21 = (v2.y == v1.y) ? 0 : (double) (v2.x - v1.x) / (double) (v2.y - v1.y);
+    Vec3f d20 = total_height==0 ?    Vec3f(0, 0, 0):Vec3f(v2-v0)/(double)total_height;
+    Vec3f d10 = segment1_height==0 ? Vec3f(0, 0, 0):Vec3f(v1-v0)/(double)segment1_height;
+    Vec3f d21 = segment2_height==0 ? Vec3f(0, 0, 0):Vec3f(v2-v1)/(double)segment2_height;
 
-    double dz20 = (v2.y == v0.y) ? 0 : (double) (v2.z - v0.z) / (double) (v2.y - v0.y);
-    double dz10 = (v1.y == v0.y) ? 0 : (double) (v1.z - v0.z) / (double) (v1.y - v0.y);
-    double dz21 = (v2.y == v1.y) ? 0 : (double) (v2.z - v1.z) / (double) (v2.y - v1.y);
+    Vec3f uv_d20 = uv_total_height==0 ?    Vec3f(0, 0, 0):Vec3f(uv2-uv0)/(double)uv_total_height;
+    Vec3f uv_d10 = uv_segment1_height==0 ? Vec3f(0, 0, 0):Vec3f(uv1-uv0)/(double)uv_segment1_height;
+    Vec3f uv_d21 = uv_segment2_height==0 ? Vec3f(0, 0, 0):Vec3f(uv2-uv1)/(double)uv_segment2_height;
 
-    double dtx20 = (vt2.y == vt0.y) ? 0 : (double) (vt2.x - vt0.x) / (double) (vt2.y - vt0.y);
-    double dtx10 = (vt1.y == vt0.y) ? 0 : (double) (vt1.x - vt0.x) / (double) (vt1.y - vt0.y);
-    double dtx21 = (vt2.y == vt1.y) ? 0 : (double) (vt2.x - vt1.x) / (double) (vt2.y - vt1.y);
+    Vec3f left_f =                  Vec3f(v0);
+    Vec3f right_f = (v1.y == v0.y) ? Vec3f(v1) : Vec3f(v0);
 
+    Vec3f uv_left_f =                  Vec3f(uv0);
+    Vec3f uv_right_f = (v1.y == v0.y) ? Vec3f(uv1) : Vec3f(uv0);
 
-    double dx20_temp = dx20;
-    double dz20_temp = dz20;
-    double dtx20_temp = dtx20;
-
-    if (swap_by_cond(dx20, dx10)) {
-        std::swap(dz20, dz10);
-        std::swap(dtx20, dtx10);
-    }
-    double x1 = v0.x;
-    double x2 = x1;
-
-    double z1 = v0.z;
-    double z2 = z1;
-
-    double xt1 = vt0.x;
-    double xt2 = xt1;
-
-    double dty = v1.y == v0.y ? 0 :(vt1.y - vt0.y) / (v1.y - v0.y);
-    double dtx1 = dtx20 * dty;
-    double dtx2 = dtx10 * dty;
-    //first triangle drawing (lowest part)
-    for (int y = v0.y, yt = vt0.y; y < v1.y; y++, yt += dty) {
-        double tg_alpha = x2 == x1 ? 0 : (z2 - z1) / (x2 - x1);
-        double dtx = x1==x2 ? 0 : (xt2 - xt1)/(x2-x1);
-        for (int x = (int) ceil(x1), xt = (int) floor(xt1); x <= (int) floor(x2); x++, xt += dtx) {
-            int idx = x + y * width;
-            if (zbuffer[idx] < tg_alpha * (x - x1) + z1) {
-                TGAColor t_color = texture.get(xt, yt);
-                color = TGAColor(intensity*t_color.r, intensity*t_color.g, intensity*t_color.b, 255);
-                zbuffer[idx] = tg_alpha * (x - x1) + z1;
-                image.set(x, y, color);
+    for (int i=0; i<total_height; i++) {
+        if(i==segment1_height){right_f = Vec3f(v1); uv_right_f = Vec3f(uv1);}
+        bool second_half = i>=v1.y-v0.y || v1.y==v0.y;
+        int segment_height = second_half ? v2.y-v1.y : v1.y-v0.y;
+        Vec3f left   = Vec3f(left_f);
+        Vec3f right   = Vec3f(right_f);
+        Vec3f uv_left = Vec3f(uv_left_f);
+        Vec3f uv_right = Vec3f(uv_right_f);
+        if (left.x>right.x) { std::swap(left, right); std::swap(uv_left, uv_right); }
+        Vec3f d = Vec3f(right.x==left.x ?(Vec3f(right - left)):(Vec3f(right - left))/(double)(right.x-left.x));
+        Vec3f uv_d = Vec3f(right.x==left.x ?(Vec3f(uv_right - uv_left)):(Vec3f(uv_right - uv_left))/(double)(right.x-left.x));
+        Vec3f point_f = Vec3f(left);
+        Vec3f uv_point_f = Vec3f(uv_left);
+        for (int j=left.x; j<=right.x; j++) {
+            float phi = right.x==left.x ? 1. : (float)(j-left.x)/(float)(right.x-left.x);
+            Vec3i point = Vec3i(point_f);
+            Vec3i uv_point = Vec3i(uv_point_f);
+            int idx = point.x+point.y*width;
+            if (zbuffer[idx]<point.z) {
+                zbuffer[idx] = point.z;
+                //TGAColor color = texture.get(uv_point.x, uv_point.y);
+                TGAColor color = TGAColor(255, 255, 255, 255);
+                image.set(point.x, point.y, TGAColor(color.r*intensity, color.g*intensity, color.b*intensity, 255));
             }
+            point_f = point_f + d;
+            uv_point_f = uv_point_f + uv_d;
         }
-        x1 += dx20;
-        x2 += dx10;
-        z1 += dz20;
-        z2 += dz10;
-
-        xt1 += dtx1;
-        xt2 += dtx2;
-    }
-
-    if (v0.y == v1.y) {
-        x1 = v0.x;
-        x2 = v1.x;
-        z1 = v0.z;
-        z2 = v1.z;
-
-        xt1 = vt0.x;
-        xt2 = vt1.x;
-    }
-
-    if (swap_by_cond(dx21, dx20_temp)) {
-        std::swap(dz21, dz20_temp);
-        std::swap(dtx21, dtx20_temp);
-    }
-
-    dty = v2.y == v1.y ? 0 :(vt2.y - vt1.y) / (v2.y - v1.y);
-    dtx1 = dtx20_temp * dty;
-    dtx2 = dtx21 * dty;
-
-    //second triangle drawing (highest part)
-    for (int y = v1.y, yt = vt1.y; y < v2.y; y++, yt += dty) {
-        double dtx = x1==x2 ? 0 : (xt2 - xt1)/(x2-x1);
-        double tg_alpha = x2 == x1 ? 0 : (z2 - z1) / (x2 - x1);
-        for (int x = (int) ceil(x1), xt = (int) floor(xt1); x <= (int) floor(x2); x++, xt += dtx) {
-            int idx = x + y * width;
-            if (zbuffer[idx] < tg_alpha * (x - x1) + z1) {
-                TGAColor t_color = texture.get(xt, yt);
-                color = TGAColor(intensity*t_color.r, intensity*t_color.g, intensity*t_color.b, 255);
-                zbuffer[idx] = tg_alpha * (x - x1) + z1;
-                image.set(x, y, color);
-            }
-        }
-        x1 += dx20_temp;
-        x2 += dx21;
-        z1 += dz20_temp;
-        z2 += dz21;
-
-        xt1 += dtx1;
-        xt2 += dtx2;
+        left_f = left_f + d20;
+        right_f = right_f + (second_half?d21:d10);
+        uv_left_f = uv_left_f + uv_d20;
+        uv_right_f = uv_right_f + (second_half?uv_d21:uv_d10);
     }
 }
