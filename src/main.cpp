@@ -2,54 +2,56 @@
 #include "primitives.h"
 #include <vector>
 #include <limits>
+#include <algorithm>
 #include "model.h"
 
-const int width = 800;
-const int height = 800;
-const int depth = 255;
+using namespace std;
+
+const int width = 1200;
+const int height = 1200;
+const int depth = 512;
 
 Model *model = NULL;
 int *zbuffer = NULL;
 Vec3f light_dir(0, 0, -1);
-
 int main(int argc, char **argv) {
-    TGAImage texture;
     if (2 == argc) {
         model = new Model(argv[1]);
     } else {
-        model = new Model("models/bat.obj");
-        //model = new Model("models/african_head.obj");
-        texture = TGAImage();
-        //texture.read_tga_file("models/african_head_diffuse.tga");
-        //texture.flip_vertically();
+        model = new Model("models/bat/bat.obj");
     }
+	Vec3f dif = model->max() - model->min();
+	Vec3f start = Vec3f(model->min());
 
+	double maxdif = max(dif[0], dif[1]), minstart = min(start[0], start[1]);
+	maxdif = max(dif[1], dif[2]);
+	minstart = min(start[1], start[2]);
     zbuffer = new int[width * height];
     for (int i = 0; i < width * height; i++) {
-        zbuffer[i] = std::numeric_limits<int>::min();
+        zbuffer[i] = numeric_limits<int>::min();
     }
 
     { // draw the model
         TGAImage image(width, height, TGAImage::RGB);
         for (int i = 0; i < model->nfaces(); i++) {
-            std::vector<Vec3i> face = model->face(i);
+            vector<Vec3i> face = model->face(i);
             Vec3i screen_coords[3];
             Vec3f world_coords[3];
             Vec3i texture_coords[3];
             for (int j = 0; j < 3; j++) {
                 Vec3f v = model->v(face[j].x);
-                //screen_coords[j] = Vec3i((v.x + 1.) * width / 2., (v.y + 1.) * height / 2., (v.z + 1.) * depth / 2.);
-                screen_coords[j] = Vec3i((v.x + 3.)/6. * width / 2., (v.y + 3.)/6. * height / 2., (v.z + 3.)/6. * depth / 2.);
+                screen_coords[j] = Vec3i((v.x - start.x)/ ceil(maxdif) * width, (v.y  - start.y)/ ceil(maxdif) * height, (v.z - start.z)/ ceil(maxdif) * depth);
                 world_coords[j] = v;
                 Vec3f vt = model->vt(face[j].y);
-                //texture_coords[j] = Vec3i(vt.x*texture.get_width(), vt.y*texture.get_height(), 0);
-                texture_coords[j] = Vec3i(0, 0, 0);
+                texture_coords[j] = model->diffuse_point(i, vt);
             }
             Vec3f n = (world_coords[2] - world_coords[0]) ^(world_coords[1] - world_coords[0]);
             n.normalize();
-            float intensity = fabsf(n * light_dir);
-                triangle(screen_coords[0], screen_coords[1], screen_coords[2], texture_coords[0], texture_coords[1],
-                         texture_coords[2], image, intensity, texture, zbuffer, width);
+			float intensity = n * light_dir;
+        	if(intensity>0){ 
+				triangle(i, screen_coords[0], screen_coords[1], screen_coords[2], texture_coords[0], texture_coords[1],
+						 texture_coords[2], image, intensity, *model, zbuffer, width);
+			}
         }
 
         image.flip_vertically(); // i want to have the origin at the left bottom corner of the image

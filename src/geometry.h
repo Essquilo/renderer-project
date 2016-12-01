@@ -1,9 +1,7 @@
 //
 // Created by Milena on 22.10.2016.
 //
-
-#ifndef RENDERER_PROJECT_GEOMETRY_H
-#define RENDERER_PROJECT_GEOMETRY_H
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -30,12 +28,12 @@ template <class t> struct Vec2 {
     template <class > friend std::ostream& operator<<(std::ostream& s, Vec2<t>& v);
 };
 
-template <class t> struct Vec3 {
+template <typename t> struct Vec3 {
     t x, y, z;
     Vec3<t>() : x(t()), y(t()), z(t()) { }
     Vec3<t>(t _x, t _y, t _z) : x(_x), y(_y), z(_z) {}
-    template <class u> Vec3<t>(const Vec3<u> &v);
-    Vec3<t>(const Vec3<t> &v) : x(t()), y(t()), z(t()) { *this = v; }
+    template <typename u> Vec3<t>(const Vec3<u> &v);
+	Vec3<t>(const Vec3<t> &v) : x(t()), y(t()), z(t()) { *this = v; }
     Vec3<t> & operator =(const Vec3<t> &v) {
         if (this != &v) {
             x = v.x;
@@ -61,8 +59,10 @@ typedef Vec2<int>   Vec2i;
 typedef Vec3<double> Vec3f;
 typedef Vec3<int>   Vec3i;
 
-template <> template <> Vec3<int>::Vec3(const Vec3<double> &v);
-template <> template <> Vec3<double >::Vec3(const Vec3<int> &v);
+template <> template <> Vec3i::Vec3(const Vec3<double> &v);
+template <> template <> Vec3f::Vec3(const Vec3<int> &v);
+
+
 
 template <class t> std::ostream& operator<<(std::ostream& s, Vec2<t>& v) {
     s << "(" << v.x << ", " << v.y << ")\n";
@@ -73,4 +73,3 @@ template <class t> std::ostream& operator<<(std::ostream& s, Vec3<t>& v) {
     s << "(" << v.x << ", " << v.y << ", " << v.z << ")\n";
     return s;
 }
-#endif //RENDERER_PROJECT_GEOMETRY_H
