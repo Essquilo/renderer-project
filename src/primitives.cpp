@@ -37,8 +37,8 @@ void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor c
     }
 }
 
-void triangle(Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage &image, float intensity,
-              TGAImage &texture, int *zbuffer, int width) {
+void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage &image, float intensity,
+              Model &model, int *zbuffer, int width) {
     if (v0.y==v1.y && v0.y==v2.y) return; // i dont care about degenerate triangles
     if (v0.y>v1.y) { std::swap(v0, v1); std::swap(uv0, uv1); }
     if (v0.y>v2.y) { std::swap(v0, v2); std::swap(uv0, uv2); }
@@ -86,8 +86,8 @@ void triangle(Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGA
             int idx = point.x+point.y*width;
             if (zbuffer[idx]<point.z) {
                 zbuffer[idx] = point.z;
-                //TGAColor color = texture.get(uv_point.x, uv_point.y);
-                TGAColor color = TGAColor(255, 255, 255, 255);
+                TGAColor color = model.diffuse(iface, uv_point);
+                //TGAColor color = TGAColor(255, 255, 255, 255);
                 image.set(point.x, point.y, TGAColor(color.r*intensity, color.g*intensity, color.b*intensity, 255));
             }
             point_f = point_f + d;
