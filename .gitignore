@@ -5,6 +5,9 @@
 *.exe
 cmake-build-debug
 
+# keep textures
+!models/*/*.tga
+
 # IntelliJ project files
 .idea
 *.iml
