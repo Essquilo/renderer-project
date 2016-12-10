@@ -105,7 +105,7 @@ artifacts/
 *_i.h
 *.ilk
 *.meta
-*.obj
+# *.obj no, we actually want obj files since they are models
 *.pch
 *.pdb
 *.pgc
