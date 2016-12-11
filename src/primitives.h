@@ -9,7 +9,7 @@
 #include "model.h"
 
 void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage&image, TGAColor color);
-void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i vt0, Vec3i vt1, Vec3i vt2, TGAImage &image, float intensity,  Model &model, int *zbuffer, int width);
+void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i vt0, Vec3i vt1, Vec3i vt2, TGAImage &image, Vec3f light,  Model &model, int *zbuffer);
 template<typename T>
 bool swap_by_cond(T& a, T& b)
 {
