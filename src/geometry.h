@@ -32,13 +32,24 @@ template <typename T> struct vec<2, T> {
 template <typename T> struct vec<3, T> {
 	vec() : x(T()), y(T()), z(T()) {}
 	vec(T X, T Y, T Z) : x(X), y(Y), z(Z) {}
-	template <class U> vec<3, T>(const vec<3, U> &v);
+	template <typename U> vec<3, T>(const vec<3, U> &v);
 	T& operator[](const size_t i) { assert(i<3); return i <= 0 ? x : (1 == i ? y : z); }
 	const T& operator[](const size_t i) const { assert(i<3); return i <= 0 ? x : (1 == i ? y : z); }
 	double norm() { return std::sqrt(x*x + y*y + z*z); }
 	vec<3, T> & normalize(T l = 1) { *this = (*this)*(l / norm()); return *this; }
 
 	T x, y, z;
+};
+
+template <typename T> struct vec<4, T> {
+	vec() : x(T()), y(T()), z(T()), k(T()){}
+	vec(T X, T Y, T Z, T K) : x(X), y(Y), z(Z) , k(K) {}
+	template <typename U> vec<4, T>(const vec<4, U> &v);
+	T& operator[](const size_t i) { assert(i<4); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : k)); }
+	const T& operator[](const size_t i) const { assert(i<4); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : k)); }
+	double norm() { return std::sqrt(x*x + y*y + z*z + k*k); }
+	vec<4, T> & normalize(T l = 1) { *this = (*this)*(l / norm()); return *this; }
+	T x, y, z, k;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -61,7 +72,7 @@ template<size_t DIM, typename T>vec<DIM, T> operator-(vec<DIM, T> lhs, const vec
 }
 
 template<size_t DIM, typename T, typename U> vec<DIM, T> operator*(vec<DIM, T> lhs, const U& rhs) {
-	for (size_t i = DIM; i--; lhs[i] *= rhs);
+	for (size_t i = DIM; i--; lhs[i] = lhs[i] * rhs);
 	return lhs;
 }
 

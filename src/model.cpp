@@ -88,6 +88,29 @@ Model::Model(const char *filename) : vertices_(), texture_vertices_(), normals_(
 	std::cout << "# v# " << vertices_.size() <<"# vt# "<< texture_vertices_.size()<< "# vn# "<< normals_.size()<<" f# "  << faces_.size() << std::endl;
     in.close();
 	load_mtl();
+	Vec3f dif = max() - min();
+	Vec3f start = Vec3f(min());
+	double maxdif;
+	maxdif = std::max(dif[0], dif[1]);
+	maxdif = std::max(maxdif, dif[2]);
+	//all vertice should have their coordinates betwean [-1, 1], [-1, 1], [-1, 1]
+	for (int i = 0; i < vertices_.size(); ++i) {
+		vertices_[i].x = (vertices_[i].x - start.x) / (maxdif / 2.) - 1.;
+		vertices_[i].y = (vertices_[i].y - start.y) / (maxdif / 2.) - 1.;
+		vertices_[i].z = (vertices_[i].z - start.z) / (maxdif / 2.) - 1.;
+	}
+	Vec3f max(-5, -5, -5), min(5, 5, 5);
+	for (auto v: vertices_) {
+		max.x = std::max(max.x, v.x);
+		max.y = std::max(max.y, v.y);
+		max.z = std::max(max.z, v.z);
+		min.x = std::min(min.x, v.x);
+		min.y = std::min(min.y, v.y);
+		min.z = std::min(min.z, v.z);
+	}
+	max_ = max;
+	min_ = min;
+	cout << "max= " << max << " min= " << min << endl;
 }
 
 Model::~Model() {
