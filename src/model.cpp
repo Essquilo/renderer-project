@@ -15,7 +15,7 @@ string get_dir (const string& str){
     return str.substr(0, found==0?found:found+1);
 }
 
-Model::Model(const char *filename) : vertices_(), texture_vertices_(), mtl_files(), faces_(), material_boundaries(), materials() {
+Model::Model(const char *filename) : vertices_(), texture_vertices_(), normals_(), mtl_files(), faces_(), material_boundaries(), materials() {
     std::ifstream in;
     double min_d = numeric_limits<double >::min(), max_d = numeric_limits<double >::max();
     min_ = Vec3f(max_d, max_d, max_d);
@@ -44,6 +44,11 @@ Model::Model(const char *filename) : vertices_(), texture_vertices_(), mtl_files
             Vec3f vt;
             for (int i=0;i<3;i++) iss >> vt[i];
             texture_vertices_.push_back(vt);
+        }else if (!line.compare(0, 3, "vn ")) {
+            iss >> trash >>trash;
+            Vec3f vn;
+            for (int i=0;i<3;i++) iss >> vn[i];
+            normals_.push_back(vn);
         } else if (!line.compare(0, 2, "f ")) {
             vector<Vec3i> f = vector<Vec3i>();
             int ivertex, iuv, inorm;
@@ -80,7 +85,7 @@ Model::Model(const char *filename) : vertices_(), texture_vertices_(), mtl_files
     /*for(int i = 0; i<faces_.size();i++){
         cerr<<"#"<<i<<" "<<faces_[i][0]<<"/"<<faces_[i][1]<<"/"<<faces_[i][2]<<endl;
     }*/
-    std::cout << "# v# " << vertices_.size() <<"# vt# "<< texture_vertices_.size()<< " f# "  << faces_.size() << std::endl;
+	std::cout << "# v# " << vertices_.size() <<"# vt# "<< texture_vertices_.size()<< "# vn# "<< normals_.size()<<" f# "  << faces_.size() << std::endl;
     in.close();
 	load_mtl();
 }
@@ -108,8 +113,16 @@ Vec3f Model::vt(int i){
     return texture_vertices_[i];
 }
 
+Vec3f Model::vn(int i) {
+	return normals_[i];
+}
+
 int Model::ntexture_verts() {
     return (int)texture_vertices_.size();
+}
+
+int Model::n_normals() {
+	return normals_.size();
 }
 
 TGAColor Model::diffuse(int iface, Vec3i point) {

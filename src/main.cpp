@@ -45,13 +45,8 @@ int main(int argc, char **argv) {
                 Vec3f vt = model->vt(face[j].y);
                 texture_coords[j] = model->diffuse_point(i, vt);
             }
-            Vec3f n = (world_coords[2] - world_coords[0]) ^(world_coords[1] - world_coords[0]);
-            n.normalize();
-			float intensity = n * light_dir;
-        	if(intensity>0){ 
 				triangle(i, screen_coords[0], screen_coords[1], screen_coords[2], texture_coords[0], texture_coords[1],
-						 texture_coords[2], image, intensity, *model, zbuffer, width);
-			}
+						 texture_coords[2], image, light_dir,*model, zbuffer);
         }
 
         image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
@@ -70,5 +65,6 @@ int main(int argc, char **argv) {
     }
     delete model;
     delete[] zbuffer;
+	system("pause");
     return 0;
 }
