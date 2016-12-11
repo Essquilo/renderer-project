@@ -9,24 +9,29 @@ using namespace std;
 
 const int width = 1200;
 const int height = 1200;
-const int depth = 512;
+const int depth = 2048;
+Vec3f light_dir = Vec3f(1, -1, 1).normalize();
+Vec3f eye;
+Vec3f up(0, 1, 0);
+Vec3f center;
 
 Model *model = NULL;
 int *zbuffer = NULL;
-Vec3f light_dir(0, 0, -1);
 int main(int argc, char **argv) {
     if (2 == argc) {
         model = new Model(argv[1]);
     } else {
         model = new Model("models/bat/bat.obj");
     }
-	Vec3f dif = model->max() - model->min();
-	Vec3f start = Vec3f(model->min());
-
-	double maxdif = max(dif[0], dif[1]), minstart = min(start[0], start[1]);
-	maxdif = max(dif[1], dif[2]);
-	minstart = min(start[1], start[2]);
+	
     zbuffer = new int[width * height];
+	center = model->min() + (model->max() - model->min()) / 2. ;
+	eye = center;
+	eye.z = 1;
+	Matrix viewport = ::viewport(0, 0, width, height, depth);
+	Matrix look = ::look_at(eye, center, up);
+	Matrix projection = Matrix::identity();
+
     for (int i = 0; i < width * height; i++) {
         zbuffer[i] = numeric_limits<int>::min();
     }
@@ -40,7 +45,9 @@ int main(int argc, char **argv) {
             Vec3i texture_coords[3];
             for (int j = 0; j < 3; j++) {
                 Vec3f v = model->v(face[j].x);
-                screen_coords[j] = Vec3i((v.x - start.x)/ ceil(maxdif) * width, (v.y  - start.y)/ ceil(maxdif) * height, (v.z - start.z)/ ceil(maxdif) * depth);
+				Vec4f screen4d = viewport * projection * look * Vec4f(v.x, v.y, v.z, 1.);
+				screen_coords[j] = Vec3i(screen4d.x, screen4d.y, screen4d.z);
+                auto test = Vec3i((v.x + 1.)* width/2., (v.y + 1)* height/2., v.z * depth);
                 world_coords[j] = v;
                 Vec3f vt = model->vt(face[j].y);
                 texture_coords[j] = model->diffuse_point(i, vt);
@@ -57,7 +64,7 @@ int main(int argc, char **argv) {
         TGAImage zbimage(width, height, TGAImage::GRAYSCALE);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                zbimage.set(i, j, TGAColor(zbuffer[i + j * width], 1));
+                zbimage.set(i, j, TGAColor(double(255) * (zbuffer[i + j * width])/ double(depth), 1));
             }
         }
         zbimage.flip_vertically(); // i want to have the origin at the left bottom corner of the image

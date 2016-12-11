@@ -7,6 +7,7 @@
 #include <iostream>
 
 using namespace std;
+
 void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor color) {
 	int dx = x1 - x0;
 	int dy = y1 - y0;
@@ -38,19 +39,18 @@ void brezenchem_line(int x0, int y0, int x1, int y1, TGAImage& image, TGAColor c
 	}
 }
 
-	Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
-		Vec3f s[2];
-		for (int i = 1; i >= 0; i--) {
-			s[i][0] = C[i] - A[i];
-			s[i][1] = B[i] - A[i];
-			s[i][2] = A[i] - P[i];
-		}
-		Vec3f u = cross(s[0], s[1]);
-		if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
-			return Vec3f(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
-		return Vec3f(-1, 1, 1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
+Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
+	Vec3f s[2];
+	for (int i = 1; i >= 0; i--) {
+		s[i][0] = C[i] - A[i];
+		s[i][1] = B[i] - A[i];
+		s[i][2] = A[i] - P[i];
 	}
-
+	Vec3f u = cross(s[0], s[1]);
+	if (std::abs(u[2]) > 1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
+		return Vec3f(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+	return Vec3f(-1, 1, 1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
+}
 
 
 void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage& image, Vec3f light,
@@ -123,6 +123,11 @@ void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec
 			Vec3i point = Vec3i(point_f);
 			Vec3i uv_point = Vec3i(uv_point_f);
 			int idx = point.x + point.y * image.get_width();
+			if (point.x >= image.get_width() || point.x < 0 || point.y >= image.get_height() || point.y < 0) {
+				point_f = point_f + d;
+				uv_point_f = uv_point_f + uv_d;
+				continue;
+			}
 			if (zbuffer[idx] < point.z) {
 				zbuffer[idx] = point.z;
 				Vec3f baricentric = barycentric(Vec2f(v0.x, v0.y), Vec2f(v1.x, v1.y), Vec2f(v2.x, v2.y), Vec2f(point.x, point.y));
@@ -142,4 +147,32 @@ void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec
 		uv_left_f = uv_left_f + uv_d20;
 		uv_right_f = uv_right_f + (second_half ? uv_d21 : uv_d10);
 	}
+}
+
+Matrix look_at(Vec3f eye, Vec3f center, Vec3f up) {
+	Vec3f z = (eye - center).normalize();
+	Vec3f x = cross(up, z).normalize();
+	Vec3f y = cross(z, x).normalize();
+	Matrix Minv = Matrix::identity();
+	Matrix Tr = Matrix::identity();
+	for (int i = 0; i<3; i++) {
+		Minv[0][i] = x[i];
+		Minv[1][i] = y[i];
+		Minv[2][i] = z[i];
+		Tr[i][3] = -center[i];
+	}
+	Matrix res = Minv*Tr;
+	return res;
+}
+
+Matrix viewport(int x, int y, int w, int h, int d) {
+	Matrix m = Matrix::identity();
+	m[0][3] = x + w / 2.;
+	m[1][3] = y + h / 2.;
+	m[2][3] = d / 2.;
+
+	m[0][0] = w / 2.;
+	m[1][1] = h / 2.;
+	m[2][2] = d / 2.;
+	return m;
 }
