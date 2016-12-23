@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include "getoptpp/getopt_pp.h"
 
 template<size_t DimCols, size_t DimRows, typename T> class mat;
 
@@ -103,7 +104,6 @@ template <size_t DIM, typename T> std::ostream& operator<<(std::ostream& out, ve
 	}
 	return out;
 }
-
 /////////////////////////////////////////////////////////////////////////////////
 
 template<size_t DIM, typename T> struct dt {
@@ -228,4 +228,29 @@ typedef vec<3, double> Vec3f;
 typedef vec<3, int>   Vec3i;
 typedef vec<4, double> Vec4f;
 typedef mat<4, 4, double> Matrix;
+
+using namespace GetOpt;
+namespace GetOpt {
+	 template <>
+	 inline _Option::Result convert<Vec3f>(const std::string& s, Vec3f& d, std::ios::fmtflags) {
+		 _Option::Result ret = _Option::OK;
+		 Vec3f tmp;
+		 char slash;
+		 std::istringstream  ss(s);
+		 std::cout << "ss" << ss.good()<<std::endl;
+		 if (ss >> tmp.x && ss >> slash) d.x = tmp.x;
+		 else {
+			 ss.clear();
+			 if (ss >> slash && slash != '/') ret = _Option::ParsingError;
+		 }
+		 if (ss >> tmp.y && ss >> slash) d.y = tmp.y;
+		 else {
+			 ss.clear();
+			 if (ss >> slash && slash != '/') ret = _Option::ParsingError;
+		 }
+		 if (ss >> tmp.z) d.z = tmp.z;
+		 return ret;
+	}
+}
+
 #endif //__GEOMETRY_H__

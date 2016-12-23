@@ -1,4 +1,3 @@
-#pragma once
 //
 // Created by Milena on 02.10.2016.
 //
@@ -53,14 +52,25 @@ Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P) {
 }
 
 
-void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage& image, Vec3f light,
+void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec3i uv2, TGAImage& image, Vec3f light, Matrix n_transform,
               Model& model, int* zbuffer) {
 	if (v0.y == v1.y && v0.y == v2.y) return;
+	/*TGAColor color = TGAColor(255, 255, 255, 255);
+	brezenchem_line(v0.x, v0.y, v1.x, v1.y, image, color);
+	brezenchem_line(v0.x, v0.y, v2.x, v2.y, image, color);
+	brezenchem_line(v1.x, v1.y, v2.x, v2.y, image, color);*/
 	vector<Vec3i> face = model.face(iface);
 	Vec3f vn0 = model.vn(face[0][2]).normalize();
 	Vec3f vn1 = model.vn(face[1][2]).normalize();
 	Vec3f vn2 = model.vn(face[2][2]).normalize();
-
+	Vec4f vn0_4d = (n_transform * Vec4f(vn0.x, vn0.y, vn0.z, 1));
+	Vec4f vn1_4d = (n_transform * Vec4f(vn1.x, vn1.y, vn1.z, 1));
+	Vec4f vn2_4d = (n_transform * Vec4f(vn2.x, vn2.y, vn2.z, 1));
+	vn0 = Vec3f(vn0_4d.x, vn0_4d.y, vn0_4d.z).normalize();
+	vn1 = Vec3f(vn1_4d.x, vn1_4d.y, vn1_4d.z).normalize();
+	vn2 = Vec3f(vn2_4d.x, vn2_4d.y, vn2_4d.z).normalize();
+	Vec3f n = cross(Vec3f(v2 - v0), Vec3f(v1 - v0));
+	n.normalize();
 	if (v0.y > v1.y) {
 		swap(v0, v1);
 		swap(uv0, uv1);
@@ -98,7 +108,9 @@ void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec
 
 	Vec3f uv_left_f = Vec3f(uv0);
 	Vec3f uv_right_f = (v1.y == v0.y) ? Vec3f(uv1) : Vec3f(uv0);
+	
 
+	double intensity = abs(n * light);
 	for (int i = 0; i < total_height; i++) {
 		if (i == segment1_height) {
 			right_f = Vec3f(v1);
@@ -132,10 +144,11 @@ void triangle(int iface, Vec3i v0, Vec3i v1, Vec3i v2, Vec3i uv0, Vec3i uv1, Vec
 				zbuffer[idx] = point.z;
 				Vec3f baricentric = barycentric(Vec2f(v0.x, v0.y), Vec2f(v1.x, v1.y), Vec2f(v2.x, v2.y), Vec2f(point.x, point.y));
 				Vec3f interpolated_n = (vn0 * baricentric[0] + vn1 * baricentric[1] + vn2 * baricentric[2]).normalize();
-				double intensity = abs(interpolated_n * light);
+					double intensity = abs(interpolated_n * light);
 				TGAColor color = model.diffuse(iface, uv_point);
 				//TGAColor color = TGAColor(255, 255, 255, 255);
-				image.set(point.x, point.y, TGAColor(intensity * color.r, intensity * color.g, intensity * color.b, 255));
+				if(intensity>0)
+					image.set(point.x, point.y, TGAColor(intensity * color.r, intensity * color.g, intensity * color.b, 255));
 				if (abs(intensity) > 1)
 					cerr << "intensity not normalized for iface#" << iface << endl;
 			}
